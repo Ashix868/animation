@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Theory Fireworks Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: transparent;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .info-panel h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .info-panel p {
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #00ff88;
+        }
+
+        .equation {
+            color: #ffaa00;
+            font-family: monospace;
+            font-size: 11px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="info-panel">
+        <h2>🔬 Advanced Physics Engine</h2>
+        <p><strong>Chaos Theory:</strong> Uses Lorenz Attractor equations for unpredictable but beautiful particle paths</p>
+        <div class="equation">dx/dt = σ(y - x)<br>dy/dt = x(ρ - z) - y<br>dz/dt = xy - βz</div>
+        
+        <p><strong>Golden Ratio:</strong> Particle timing follows φ = 1.618... for natural beauty</p>
+        <div class="equation">φ = (1 + √5) / 2</div>
+        
+        <p><strong>Fibonacci Spirals:</strong> Text formation uses nature's patterns</p>
+        <div class="equation">θ = n × 137.508°</div>
+        
+        <p><strong>Magnetic Fields:</strong> Letters attract particles with inverse square law</p>
+        <div class="equation">F = k(q₁q₂)/r²</div>
+    </div>
+
+    <div class="stats" id="stats">
+        Particles: 0<br>
+        FPS: 60<br>
+        Chaos Factor: 0.5<br>
+        Golden Timing: φ
+    </div>
+
+    <div class="controls">
+        <button onclick="startDemo()">▶️ Generate "Masterm Cards"</button>
+        <button onclick="togglePhysics()">🔬 Toggle Advanced Physics</button>
+        <button onclick="resetDemo()">🔄 Reset</button>
+    </div>
+
+    <script>
+        // Advanced Mathematical Constants
+        const PHI = (1 + Math.sqrt(5)) / 2; // Golden Ratio
+        const GOLDEN_ANGLE = 137.508 * Math.PI / 180; // Golden Angle in radians
+        
+        // Chaos Theory - Lorenz Attractor parameters
+        const LORENZ = {
+            sigma: 10,
+            rho: 28,
+            beta: 8/3,
+            dt: 0.01
+        };
+
+        // Canvas and Context
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        let particles = [];
+        let textParticles = [];
+        let time = 0;
+        let physicsEnabled = true;
+
+        // Resize canvas to full screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Advanced Particle Class with Chaos Theory
+        class ChaosParticle {
+            constructor(x, y, options = {}) {
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                this.startY = y;
+                
+                // Chaos theory state variables
+                this.chaosX = Math.random() * 20 - 10;
+                this.chaosY = Math.random() * 20 - 10;
+                this.chaosZ = Math.random() * 30;
+                
+                // Physics properties
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.mass = 0.5 + Math.random() * 1.5;
+                this.charge = Math.random() > 0.5 ? 1 : -1;
+                
+                // Visual properties
+                this.size = options.size || (1 + Math.random() * 3);
+                this.color = options.color || this.generateChaosColor();
+                this.life = options.life || (200 + Math.random() * 300);
+                this.maxLife = this.life;
+                
+                // Advanced behavior
+                this.targetX = options.targetX || null;
+                this.targetY = options.targetY || null;
+                this.magneticStrength = 50 + Math.random() * 100;
+                this.trailPoints = [];
+                this.fibonacciIndex = Math.floor(Math.random() * 144);
+            }
+
+            generateChaosColor() {
+                // Use chaos values to generate colors
+                const r = Math.floor(128 + 127 * Math.sin(this.chaosX * 0.1));
+                const g = Math.floor(128 + 127 * Math.sin(this.chaosY * 0.1));
+                const b = Math.floor(128 + 127 * Math.sin(this.chaosZ * 0.1));
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            updateChaosSystem(dt) {
+                // Lorenz Attractor equations
+                const dx = LORENZ.sigma * (this.chaosY - this.chaosX);
+                const dy = this.chaosX * (LORENZ.rho - this.chaosZ) - this.chaosY;
+                const dz = this.chaosX * this.chaosY - LORENZ.beta * this.chaosZ;
+                
+                this.chaosX += dx * dt;
+                this.chaosY += dy * dt;
+                this.chaosZ += dz * dt;
+                
+                // Update color based on chaos
+                this.color = this.generateChaosColor();
+            }
+
+            applyMagneticForces() {
+                if (!this.targetX || !this.targetY) return;
+                
+                // Calculate distance to target
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    // Inverse square law for magnetic attraction
+                    const force = this.magneticStrength / (distance * distance + 1);
+                    const forceX = (dx / distance) * force * 0.01;
+                    const forceY = (dy / distance) * force * 0.01;
+                    
+                    this.vx += forceX / this.mass;
+                    this.vy += forceY / this.mass;
+                }
+            }
+
+            applyFibonacciMovement() {
+                // Add fibonacci spiral influence
+                const angle = this.fibonacciIndex * GOLDEN_ANGLE + time * 0.01;
+                const radius = Math.sqrt(this.fibonacciIndex) * 2;
+                
+                const spiralX = Math.cos(angle) * radius * 0.1;
+                const spiralY = Math.sin(angle) * radius * 0.1;
+                
+                this.vx += spiralX * 0.001;
+                this.vy += spiralY * 0.001;
+            }
+
+            update(dt) {
+                if (physicsEnabled) {
+                    // Update chaos system
+                    this.updateChaosSystem(dt);
+                    
+                    // Apply advanced physics
+                    this.applyMagneticForces();
+                    this.applyFibonacciMovement();
+                }
+                
+                // Basic physics
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Friction and chaos influence
+                this.vx *= 0.995;
+                this.vy *= 0.995;
+                
+                if (physicsEnabled) {
+                    // Add chaos to movement
+                    this.vx += this.chaosX * 0.0001;
+                    this.vy += this.chaosY * 0.0001;
+                }
+                
+                // Trail effect
+                this.trailPoints.push({x: this.x, y: this.y, life: 20});
+                this.trailPoints = this.trailPoints.filter(point => point.life-- > 0);
+                
+                // Life management
+                this.life--;
+                return this.life > 0;
+            }
+
+            draw(ctx) {
+                const alpha = this.life / this.maxLife;
+                
+                // Draw particle trail
+                if (this.trailPoints.length > 1) {
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    
+                    for (let i = 0; i < this.trailPoints.length - 1; i++) {
+                        const point = this.trailPoints[i];
+                        const trailAlpha = (point.life / 20) * alpha * 0.3;
+                        
+                        ctx.fillStyle = this.color.replace('rgb', 'rgba').replace(')', `, ${trailAlpha})`);
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, this.size * 0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+                
+                // Draw main particle with glow
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                // Outer glow
+                const glowSize = this.size * 4;
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+                gradient.addColorStop(0, this.color.replace('rgb', 'rgba').replace(')', `, ${alpha * 0.8})`));
+                gradient.addColorStop(0.5, this.color.replace('rgb', 'rgba').replace(')', `, ${alpha * 0.4})`));
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core particle
+                ctx.fillStyle = this.color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Chaos sparkle effect
+                if (physicsEnabled && Math.random() < 0.1) {
+                    const sparkleSize = this.size * 2;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - sparkleSize, this.y);
+                    ctx.lineTo(this.x + sparkleSize, this.y);
+                    ctx.moveTo(this.x, this.y - sparkleSize);
+                    ctx.lineTo(this.x, this.y + sparkleSize);
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // Text Particle for forming letters
+        class TextParticle {
+            constructor(x, y, targetX, targetY, char, color) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.char = char;
+                this.color = color;
+                this.size = 24;
+                this.life = 500;
+                this.maxLife = 500;
+                this.formed = false;
+                this.formTime = 0;
+                this.element = null;
+                
+                // Golden ratio timing
+                this.formationDelay = Math.random() * PHI * 100;
+            }
+
+            update() {
+                this.formTime++;
+                
+                if (this.formTime > this.formationDelay && !this.formed) {
+                    // Use golden ratio for smooth formation
+                    const progress = Math.min(1, (this.formTime - this.formationDelay) / (PHI * 50));
+                    const easeProgress = 1 - Math.pow(1 - progress, PHI);
+                    
+                    this.x = this.x + (this.targetX - this.x) * easeProgress * 0.1;
+                    this.y = this.y + (this.targetY - this.y) * easeProgress * 0.1;
+                    
+                    if (progress >= 0.95) {
+                        this.formed = true;
+                        this.x = this.targetX;
+                        this.y = this.targetY;
+                    }
+                }
+                
+                this.life--;
+                this.updateElement();
+                return this.life > 0;
+            }
+
+            createElement() {
+                this.element = document.createElement('div');
+                this.element.textContent = this.char;
+                this.element.style.cssText = `
+                    position: absolute;
+                    font-size: ${this.size}px;
+                    font-weight: bold;
+                    color: ${this.color};
+                    font-family: 'Arial', sans-serif;
+                    text-shadow: 0 0 20px ${this.color}, 2px 2px 4px rgba(0,0,0,0.8);
+                    pointer-events: none;
+                    z-index: 1000;
+                    left: ${this.x}px;
+                    top: ${this.y}px;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(this.element);
+            }
+
+            updateElement() {
+                if (!this.element) this.createElement();
+                
+                const alpha = this.life / this.maxLife;
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+                this.element.style.opacity = alpha;
+                
+                if (this.formed) {
+                    // Add floating effect using golden ratio
+                    const float = Math.sin(time * 0.01 * PHI) * 5;
+                    this.element.style.transform = `translateY(${float}px)`;
+                }
+            }
+
+            destroy() {
+                if (this.element) {
+                    this.element.remove();
+                    this.element = null;
+                }
+            }
+        }
+
+        // Generate text coordinates for "MASTERM CARDS"
+        function generateTextCoordinates() {
+            const text = "MASTERM CARDS";
+            const fontSize = 48;
+            const letterSpacing = fontSize * 0.8;
+            const lineHeight = fontSize * 1.5;
+            
+            const words = text.split(' ');
+            const coordinates = [];
+            
+            // Calculate total width for centering
+            const totalWidth = text.length * letterSpacing;
+            const startX = (canvas.width - totalWidth) / 2;
+            const startY = canvas.height / 2 - lineHeight;
+            
+            let charIndex = 0;
+            words.forEach((word, wordIndex) => {
+                const wordStartX = startX + charIndex * letterSpacing;
+                const y = startY + wordIndex * lineHeight;
+                
+                word.split('').forEach((char, i) => {
+                    coordinates.push({
+                        char: char,
+                        x: wordStartX + i * letterSpacing,
+                        y: y,
+                        index: charIndex
+                    });
+                    charIndex++;
+                });
+                
+                // Add space
+                charIndex++;
+            });
+            
+            return coordinates;
+        }
+
+        // Main animation function
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 25, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            time++;
+            
+            // Update particles
+            particles = particles.filter(particle => {
+                const alive = particle.update(LORENZ.dt);
+                if (alive) particle.draw(ctx);
+                return alive;
+            });
+            
+            // Update text particles
+            textParticles = textParticles.filter(textParticle => {
+                const alive = textParticle.update();
+                if (!alive) textParticle.destroy();
+                return alive;
+            });
+            
+            // Update stats
+            updateStats();
+            
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function updateStats() {
+            const stats = document.getElementById('stats');
+            const fps = Math.round(1000 / 16.67); // Approximate
+            const chaosPhase = Math.sin(time * 0.01);
+            
+            stats.innerHTML = `
+                Particles: ${particles.length}<br>
+                Text Elements: ${textParticles.length}<br>
+                FPS: ~60<br>
+                Chaos Phase: ${chaosPhase.toFixed(3)}<br>
+                Golden Time: φt = ${(time * PHI * 0.001).toFixed(3)}
+            `;
+        }
+
+        function startDemo() {
+            // Clear existing
+            particles = [];
+            textParticles.forEach(tp => tp.destroy());
+            textParticles = [];
+            
+            // Launch sequence
+            createLaunchEffect();
+            
+            // Form text after explosion
+            setTimeout(() => {
+                createTextFromExplosion();
+            }, 2000);
+            
+            // Start animation if not running
+            if (!animationId) {
+                animate();
+            }
+        }
+
+        function createLaunchEffect() {
+            const centerX = canvas.width / 2;
+            const launchY = canvas.height - 50;
+            const explosionY = canvas.height * 0.3;
+            
+            // Launch trail using fibonacci timing
+            for (let i = 0; i < 89; i++) { // 89 is a fibonacci number
+                setTimeout(() => {
+                    const x = centerX + Math.sin(i * GOLDEN_ANGLE) * 10;
+                    const y = launchY - (i / 89) * (launchY - explosionY);
+                    
+                    particles.push(new ChaosParticle(x, y, {
+                        size: 2 + Math.random() * 2,
+                        life: 100,
+                        color: `hsl(${45 + Math.random() * 30}, 100%, 70%)`
+                    }));
+                }, i * (PHI * 10)); // Golden ratio timing
+            }
+            
+            // Main explosion
+            setTimeout(() => {
+                for (let i = 0; i < 233; i++) { // 233 is fibonacci
+                    const angle = i * GOLDEN_ANGLE;
+                    const speed = 2 + Math.random() * 8;
+                    
+                    particles.push(new ChaosParticle(centerX, explosionY, {
+                        size: 1.5 + Math.random() * 2.5,
+                        life: 300 + Math.random() * 200,
+                        color: `hsl(${Math.random() * 360}, 80%, 70%)`
+                    }));
+                    
+                    const particle = particles[particles.length - 1];
+                    particle.vx = Math.cos(angle) * speed;
+                    particle.vy = Math.sin(angle) * speed;
+                }
+            }, PHI * 1000); // Golden ratio delay
+        }
+
+        function createTextFromExplosion() {
+            const coordinates = generateTextCoordinates();
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height * 0.3;
+            
+            coordinates.forEach((coord, index) => {
+                // Create text particle
+                const color = `hsl(${(index * 137.508) % 360}, 90%, 70%)`; // Golden angle hue
+                const textParticle = new TextParticle(
+                    centerX + (Math.random() - 0.5) * 200,
+                    centerY + (Math.random() - 0.5) * 200,
+                    coord.x,
+                    coord.y,
+                    coord.char,
+                    color
+                );
+                textParticles.push(textParticle);
+                
+                // Create supporting particles with magnetic attraction
+                for (let i = 0; i < 13; i++) { // 13 is fibonacci
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 50 + Math.random() * 100;
+                    
+                    const particle = new ChaosParticle(
+                        centerX + Math.cos(angle) * distance,
+                        centerY + Math.sin(angle) * distance,
+                        {
+                            targetX: coord.x,
+                            targetY: coord.y,
+                            size: 1 + Math.random() * 1.5,
+                            life: 400 + Math.random() * 200,
+                            color: color
+                        }
+                    );
+                    particles.push(particle);
+                }
+            });
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            document.querySelector('button[onclick="togglePhysics()"]').textContent = 
+                physicsEnabled ? '🔬 Toggle Advanced Physics' : '⚡ Basic Physics Mode';
+        }
+
+        function resetDemo() {
+            particles = [];
+            textParticles.forEach(tp => tp.destroy());
+            textParticles = [];
+            time = 0;
+            
+            ctx.fillStyle = 'rgba(10, 10, 25, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Auto-start demo
+        setTimeout(startDemo, 1000);
+    </script>
+</body>
+</html>
